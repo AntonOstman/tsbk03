@@ -27,6 +27,9 @@ mat4 projectionMatrix;
 mat4 viewMatrix, modelToWorldMatrix;
 
 
+
+
+
 GLfloat square[] = {
 							-1,-1,0,
 							-1,1, 0,
@@ -47,6 +50,20 @@ FBOstruct *fbo1, *fbo2;
 GLuint phongshader = 0, plaintextureshader = 0;
 
 //-------------------------------------------------------------------------------------
+void runfilter(GLuint shader, FBOstruct *in1, FBOstruct *in2, FBOstruct *out)
+
+{
+    glUseProgram(shader);
+    // Many of these things would be more efficiently done once and for all
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glUniform1i(glGetUniformLocation(shader, "texUnit"), 0);
+    glUniform1i(glGetUniformLocation(shader, "texUnit2"), 1);
+
+    useFBO(out, in1, in2);
+    DrawModel(squareModel, shader, "in_Position", NULL, "in_TexCoord");
+    glFlush();
+}
 
 void init(void)
 {
