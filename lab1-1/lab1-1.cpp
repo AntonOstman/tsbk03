@@ -46,19 +46,18 @@ Model* squareModel;
 
 //----------------------Globals-------------------------------------------------
 Model *model1;
-FBOstruct *fbo1, *fbo2;
-GLuint phongshader = 0, plaintextureshader = 0;
+FBOstruct *fbo1, *fbo2, *fbo3;
+GLuint phongshader = 0, plaintextureshader = 0, lowpassshader = 0, lowpassshadery = 0, lowpassshaderx = 0;
 
 //-------------------------------------------------------------------------------------
 void runfilter(GLuint shader, FBOstruct *in1, FBOstruct *in2, FBOstruct *out)
-
 {
     glUseProgram(shader);
     // Many of these things would be more efficiently done once and for all
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glUniform1i(glGetUniformLocation(shader, "texUnit"), 0);
-    glUniform1i(glGetUniformLocation(shader, "texUnit2"), 1);
+    /*glUniform1i(glGetUniformLocation(shader, "texUnit2"), 1);*/
 
     useFBO(out, in1, in2);
     DrawModel(squareModel, shader, "in_Position", NULL, "in_TexCoord");
@@ -78,12 +77,16 @@ void init(void)
 
 	// Load and compile shaders
 	plaintextureshader = loadShaders("plaintextureshader.vert", "plaintextureshader.frag");  // puts texture on teapot
+	lowpassshader = loadShaders("plaintextureshader.vert", "lowpass.frag");  // lowpass
+	lowpassshaderx = loadShaders("plaintextureshader.vert", "lowpass-x.frag");  // lowpass
+	lowpassshadery = loadShaders("plaintextureshader.vert", "lowpass-y.frag");  // lowpass
 	phongshader = loadShaders("phong.vert", "phong.frag");  // renders with light (used for initial renderin of teapot)
 
 	printError("init shader");
 
 	fbo1 = initFBO(initWidth, initHeight, 0);
 	fbo2 = initFBO(initWidth, initHeight, 0);
+	fbo3 = initFBO(initWidth, initHeight, 0);
 
 	// load the model
 	model1 = LoadModel("stanford-bunny.obj");
@@ -135,19 +138,38 @@ void display(void)
 
 	DrawModel(model1, phongshader, "in_Position", "in_Normal", NULL);
 
+    // Filter for bloom
+
+    /*useFBO(fbo3, fbo1, 0L);*/
+
 	// Done rendering the FBO! Set up for rendering on screen, using the result as texture!
 
 //	glFlush(); // Can cause flickering on some systems. Can also be necessary to make drawing complete.
-	useFBO(0L, fbo1, 0L);
+	useFBO(fbo3, fbo1, 0L);
+	/*useFBO(0L, fbo1, 0L);*/
 	glClearColor(0.0, 0.0, 0.0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Activate second shader program
-	glUseProgram(plaintextureshader);
+	/*glUseProgram(plaintextureshader);*/
+	/**/
+	/*glDisable(GL_CULL_FACE);*/
+	/*glDisable(GL_DEPTH_TEST);*/
+	/*DrawModel(squareModel, plaintextureshader, "in_Position", NULL, "in_TexCoord");*/
+
+	glUseProgram(lowpassshaderx);
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
-	DrawModel(squareModel, plaintextureshader, "in_Position", NULL, "in_TexCoord");
+	DrawModel(squareModel, lowpassshaderx, "in_Position", NULL, "in_TexCoord");
+
+	useFBO(0L, fbo3, 0L);
+
+	glUseProgram(lowpassshadery);
+
+	DrawModel(squareModel, lowpassshadery, "in_Position", NULL, "in_TexCoord");
+    /*runfilter(lowpassshaderx, fbo1, 0L, fbo3);*/
+    /*runfilter(lowpassshadery, fbo3, 0L, fbo3);*/
 
 	glutSwapBuffers();
 }
