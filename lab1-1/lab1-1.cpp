@@ -7,6 +7,8 @@
 // 2021: Updated to use LittleOBJLoader.
 // 2022: Cleaned up. Made C++ variant.
 
+#include <GL/gl.h>
+#include <GL/glext.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -60,6 +62,9 @@ void runfilter(GLuint shader, FBOstruct *in1, FBOstruct *in2, FBOstruct *out)
     /*glUniform1i(glGetUniformLocation(shader, "texUnit2"), 1);*/
 
     useFBO(out, in1, in2);
+    glClearColor(0.0, 0.0, 0.0, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     DrawModel(squareModel, shader, "in_Position", NULL, "in_TexCoord");
     glFlush();
 }
@@ -138,38 +143,26 @@ void display(void)
 
 	DrawModel(model1, phongshader, "in_Position", "in_Normal", NULL);
 
-    // Filter for bloom
-
-    /*useFBO(fbo3, fbo1, 0L);*/
-
 	// Done rendering the FBO! Set up for rendering on screen, using the result as texture!
 
-//	glFlush(); // Can cause flickering on some systems. Can also be necessary to make drawing complete.
-	useFBO(fbo3, fbo1, 0L);
-	/*useFBO(0L, fbo1, 0L);*/
-	glClearColor(0.0, 0.0, 0.0, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glFlush(); // Can cause flickering on some systems. Can also be necessary to make drawing complete.
+    runfilter(lowpassshaderx, fbo1, 0L, fbo3);
+    runfilter(lowpassshadery, fbo3, 0L, fbo1);
+    runfilter(lowpassshaderx, fbo1, 0L, fbo3);
+    runfilter(lowpassshadery, fbo3, 0L, fbo1);
+    runfilter(lowpassshaderx, fbo1, 0L, fbo3);
+    runfilter(lowpassshadery, fbo3, 0L, fbo1);
+    runfilter(lowpassshaderx, fbo1, 0L, fbo3);
+    runfilter(lowpassshadery, fbo3, 0L, fbo1);
+    runfilter(lowpassshaderx, fbo1, 0L, fbo3);
+    runfilter(lowpassshadery, fbo3, 0L, fbo1);
 
-	// Activate second shader program
-	/*glUseProgram(plaintextureshader);*/
-	/**/
-	/*glDisable(GL_CULL_FACE);*/
-	/*glDisable(GL_DEPTH_TEST);*/
-	/*DrawModel(squareModel, plaintextureshader, "in_Position", NULL, "in_TexCoord");*/
+    glUseProgram(plaintextureshader);
 
-	glUseProgram(lowpassshaderx);
-
+	useFBO(0L, fbo1, 0L);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
-	DrawModel(squareModel, lowpassshaderx, "in_Position", NULL, "in_TexCoord");
-
-	useFBO(0L, fbo3, 0L);
-
-	glUseProgram(lowpassshadery);
-
-	DrawModel(squareModel, lowpassshadery, "in_Position", NULL, "in_TexCoord");
-    /*runfilter(lowpassshaderx, fbo1, 0L, fbo3);*/
-    /*runfilter(lowpassshadery, fbo3, 0L, fbo3);*/
+	DrawModel(squareModel, plaintextureshader, "in_Position", NULL, "in_TexCoord");
 
 	glutSwapBuffers();
 }
