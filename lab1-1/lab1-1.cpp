@@ -49,7 +49,7 @@ Model* squareModel;
 //----------------------Globals-------------------------------------------------
 Model *model1;
 FBOstruct *fbo1, *fbo2, *fbo3;
-GLuint phongshader = 0, plaintextureshader = 0, lowpassshader = 0, lowpassshadery = 0, lowpassshaderx = 0;
+GLuint phongshader = 0, plaintextureshader = 0, lowpassshader = 0, lowpassshadery = 0, lowpassshaderx = 0, thresholdshader = 0;
 
 //-------------------------------------------------------------------------------------
 void runfilter(GLuint shader, FBOstruct *in1, FBOstruct *in2, FBOstruct *out)
@@ -59,12 +59,9 @@ void runfilter(GLuint shader, FBOstruct *in1, FBOstruct *in2, FBOstruct *out)
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glUniform1i(glGetUniformLocation(shader, "texUnit"), 0);
-    /*glUniform1i(glGetUniformLocation(shader, "texUnit2"), 1);*/
+    glUniform1i(glGetUniformLocation(shader, "texUnit2"), 1);
 
     useFBO(out, in1, in2);
-    glClearColor(0.0, 0.0, 0.0, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     DrawModel(squareModel, shader, "in_Position", NULL, "in_TexCoord");
     glFlush();
 }
@@ -82,9 +79,9 @@ void init(void)
 
 	// Load and compile shaders
 	plaintextureshader = loadShaders("plaintextureshader.vert", "plaintextureshader.frag");  // puts texture on teapot
-	lowpassshader = loadShaders("plaintextureshader.vert", "lowpass.frag");  // lowpass
 	lowpassshaderx = loadShaders("plaintextureshader.vert", "lowpass-x.frag");  // lowpass
 	lowpassshadery = loadShaders("plaintextureshader.vert", "lowpass-y.frag");  // lowpass
+	thresholdshader = loadShaders("plaintextureshader.vert", "threshold.frag");  // threshold
 	phongshader = loadShaders("phong.vert", "phong.frag");  // renders with light (used for initial renderin of teapot)
 
 	printError("init shader");
@@ -145,23 +142,24 @@ void display(void)
 
 	// Done rendering the FBO! Set up for rendering on screen, using the result as texture!
 
-	glFlush(); // Can cause flickering on some systems. Can also be necessary to make drawing complete.
-    runfilter(lowpassshaderx, fbo1, 0L, fbo3);
-    runfilter(lowpassshadery, fbo3, 0L, fbo1);
-    runfilter(lowpassshaderx, fbo1, 0L, fbo3);
-    runfilter(lowpassshadery, fbo3, 0L, fbo1);
-    runfilter(lowpassshaderx, fbo1, 0L, fbo3);
-    runfilter(lowpassshadery, fbo3, 0L, fbo1);
-    runfilter(lowpassshaderx, fbo1, 0L, fbo3);
-    runfilter(lowpassshadery, fbo3, 0L, fbo1);
-    runfilter(lowpassshaderx, fbo1, 0L, fbo3);
-    runfilter(lowpassshadery, fbo3, 0L, fbo1);
+	/*glFlush(); // Can cause flickering on some systems. Can also be necessary to make drawing complete.*/
+
+    runfilter(thresholdshader, fbo1, 0L, fbo3);
+
+    for (int i = 0; i< 30; i++){
+        runfilter(lowpassshaderx, fbo3, 0L, fbo1);
+        runfilter(lowpassshadery, fbo1, 0L, fbo3);
+    }
+
+	useFBO(0L, fbo3, 0L);
+
+	glClearColor(0.0,0.0,0.0,0.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
 
     glUseProgram(plaintextureshader);
 
-	useFBO(0L, fbo1, 0L);
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
 	DrawModel(squareModel, plaintextureshader, "in_Position", NULL, "in_TexCoord");
 
 	glutSwapBuffers();
