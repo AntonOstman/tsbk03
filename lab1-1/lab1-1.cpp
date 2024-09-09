@@ -79,6 +79,7 @@ void init(void)
 
 	// Load and compile shaders
 	plaintextureshader = loadShaders("plaintextureshader.vert", "plaintextureshader.frag");  // puts texture on teapot
+	lowpassshader = loadShaders("plaintextureshader.vert", "lowpass.frag");  // lowpass
 	lowpassshaderx = loadShaders("plaintextureshader.vert", "lowpass-x.frag");  // lowpass
 	lowpassshadery = loadShaders("plaintextureshader.vert", "lowpass-y.frag");  // lowpass
 	thresholdshader = loadShaders("plaintextureshader.vert", "threshold.frag");  // threshold
@@ -148,8 +149,8 @@ void display(void)
     runfilter(thresholdshader, fbo1, 0L, fbo2);
 
     for (int i = 0; i< 30; i++){
-        runfilter(lowpassshaderx, fbo2, 0L, fbo3);
-        runfilter(lowpassshadery, fbo3, 0L, fbo2);
+        runfilter(lowpassshader, fbo2, 0L, fbo3);
+        runfilter(lowpassshader, fbo3, 0L, fbo2);
     }
 
     runfilter(combineshader, fbo1, fbo2, fbo3);

@@ -20,23 +20,23 @@ float sobely[9] = float[] ( 1,  2,  1,
 float sobelx[9] = float[] (-1,  0,  1,
                            -2,  0,  2,
                            -1,  0,  1);
-float sobely(){
-    for (int i=-kernelsize / 2; i < kernelsize/2 + 1; i++){
-        for (int j=-kernelsize / 2; j < kernelsize/2 + 1; j++){
-            int idx = (i + kernelsize / 2) * kernelsize + (j + kernelsize/2);
-            float weight = kernel[idx];
-            col += weight * vec3(texture(texUnit, outTexCoord + vec2(pixelsize.x * i, pixelsize.y * j)));
-        }
+
+float seperated_sobel(float* kernelx, float* kernely, int kernelsize){
+    float dx = 0;
+    vec2 pixelsize = 1.0/textureSize(texUnit, 0);
+
+    for (int i = -kernelsize / 2; i < kernelsize / 2 + 1; i++){
+        float weight = kernelx[i + kernelsize / 2];
+        vec2 coord = vec2(outTexCoord.x + pixelsize.x * float(i), outTexCoord.y);
+        dx += weight * vec3(texture(texUnit, coord));
     }
-}
-float sobelx(){
-    for (int i=-kernelsize / 2; i < kernelsize/2 + 1; i++){
-        for (int j=-kernelsize / 2; j < kernelsize/2 + 1; j++){
-            int idx = (i + kernelsize / 2) * kernelsize + (j + kernelsize/2);
-            float weight = kernel[idx];
-            col += weight * vec3(texture(texUnit, outTexCoord + vec2(pixelsize.x * i, pixelsize.y * j)));
-        }
+
+    for (int i = -kernelsize / 2; i < kernelsize / 2 + 1; i++){
+        float weight = kernely[i + kernelsize / 2];
+        vec2 coord = vec2(outTexCoord.x + pixelsize.x * float(i), outTexCoord.y);
+        dx += weight * vec3(texture(texUnit, coord));
     }
+    return dx;
 }
 
 void main(void)
