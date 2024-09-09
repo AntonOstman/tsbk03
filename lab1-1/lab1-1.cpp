@@ -49,7 +49,7 @@ Model* squareModel;
 //----------------------Globals-------------------------------------------------
 Model *model1;
 FBOstruct *fbo1, *fbo2, *fbo3;
-GLuint phongshader = 0, plaintextureshader = 0, lowpassshader = 0, lowpassshadery = 0, lowpassshaderx = 0, thresholdshader = 0;
+GLuint phongshader = 0, plaintextureshader = 0, lowpassshader = 0, lowpassshadery = 0, lowpassshaderx = 0, thresholdshader = 0, combineshader = 0;
 
 //-------------------------------------------------------------------------------------
 void runfilter(GLuint shader, FBOstruct *in1, FBOstruct *in2, FBOstruct *out)
@@ -82,6 +82,7 @@ void init(void)
 	lowpassshaderx = loadShaders("plaintextureshader.vert", "lowpass-x.frag");  // lowpass
 	lowpassshadery = loadShaders("plaintextureshader.vert", "lowpass-y.frag");  // lowpass
 	thresholdshader = loadShaders("plaintextureshader.vert", "threshold.frag");  // threshold
+	combineshader = loadShaders("plaintextureshader.vert", "combine.frag");  // threshold
 	phongshader = loadShaders("phong.vert", "phong.frag");  // renders with light (used for initial renderin of teapot)
 
 	printError("init shader");
@@ -144,12 +145,14 @@ void display(void)
 
 	/*glFlush(); // Can cause flickering on some systems. Can also be necessary to make drawing complete.*/
 
-    runfilter(thresholdshader, fbo1, 0L, fbo3);
+    runfilter(thresholdshader, fbo1, 0L, fbo2);
 
     for (int i = 0; i< 30; i++){
-        runfilter(lowpassshaderx, fbo3, 0L, fbo1);
-        runfilter(lowpassshadery, fbo1, 0L, fbo3);
+        runfilter(lowpassshaderx, fbo2, 0L, fbo3);
+        runfilter(lowpassshadery, fbo3, 0L, fbo2);
     }
+
+    runfilter(combineshader, fbo1, fbo2, fbo3);
 
 	useFBO(0L, fbo3, 0L);
 

@@ -12,13 +12,13 @@ och data=NULL
 
 Hur många pass körde du lågpassfiltret i 1c och 1d?
 
-????
+30 st, onödigt många?
 
 Hur löste du 1f (om du gjorde det)? Vilket/vilka filter? (Extrauppgift)
 
 Bör trunkeringen göras i egen shader eller som del av en shader som gör något mer? Varför?
 
 Beror väl på målet, om vi inte behöver värden över 1 kan vi göra i en shader.
-Men man kan tänka sig ha en separat bara för trunkering som man gör i slutet för att spara informationen.
+Men man kan tänka sig ha en separat bara för trunkering som man gör när man inte längre vill spara informationen.
 
 
