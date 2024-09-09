@@ -149,8 +149,8 @@ void display(void)
     runfilter(thresholdshader, fbo1, 0L, fbo2);
 
     for (int i = 0; i< 30; i++){
-        runfilter(lowpassshader, fbo2, 0L, fbo3);
-        runfilter(lowpassshader, fbo3, 0L, fbo2);
+        runfilter(lowpassshaderx, fbo2, 0L, fbo3);
+        runfilter(lowpassshadery, fbo3, 0L, fbo2);
     }
 
     runfilter(combineshader, fbo1, fbo2, fbo3);
