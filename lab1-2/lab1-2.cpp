@@ -125,6 +125,7 @@ void init(void)
     glCullFace(GL_BACK);
 
     // Load shader
+    /*shader = loadShaders("lab1-2.vert", "view-bumpmap.frag");*/
     shader = loadShaders("lab1-2.vert", "lab1-2.frag");
 
     // Load bump map (you are encouraged to try different ones)

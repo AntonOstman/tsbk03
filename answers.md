@@ -22,3 +22,18 @@ Beror väl på målet, om vi inte behöver värden över 1 kan vi göra i en sha
 Men man kan tänka sig ha en separat bara för trunkering som man gör när man inte längre vill spara informationen.
 
 
+lab 1-2
+
+Frågor:
+
+Vilken bumpmappning tycker du är att föredra, vykoordinater eller texturkoordinater? Varför? Vad är skillnaden mellan att arbeta i vy- och texturkoordinater? Vilken bumpmappning (2a eller 2b) är lämplig för normalmapping?
+
+De ser visuellt likadan ut, men att arbeta i texturkoordinates så kan vi tekniskt sett skippa att beräkna om gradienten för varje gång vi renderar.
+
+Definierar du bumpmappen som avstånd in i eller ut ur objektet? Var spelar det in?
+
+avstånd in, vit gör att de två normalvektorerna på vardera sida av bumpen pekar mot varandra i.e. texturen "går in", det påverkar om vit/svart är in eller ut i bumpmappen
+
+Blev Mvt rätt med mat3 i 2b? Om inte, vad gjorde du åt det?
+
+Ser rätt ut? Vad kan felet ni är ute efter vara?
