@@ -54,14 +54,16 @@ void main(void)
 
 
     // Since bump map is gray scale only choosing one color component should be fine
-    vec3 normal = normalize(out_Normal);
 
-    mat3 mvt = mat3(Ps, Pt, normal);
+    vec3 normal = vec3(dx.r, dy.r, 1.0);
+    mat3 mvt = transpose(mat3(Ps, Pt, out_Normal));
+
     light = mvt * light;
+
     
-    normal.x += dx.r;
-    normal.y += dy.r;
-    normal = normalize(normal);
+    //normal.x = dx.r;
+    //normal.y = dy.r;
+    //normal = normalize(normal);
 	// Simplified lighting calculation.
 	// A full solution would include material, ambient, specular, light sources, multiply by texture.
     out_Color = vec4( max(0.0, dot(normal, light))+0.4) * vec4(0.5f, 0.5f, 0.5f, 1.0f);
