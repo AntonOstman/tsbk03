@@ -55,7 +55,7 @@ void main(void)
 
     // Since bump map is gray scale only choosing one color component should be fine
 
-    vec3 normal = vec3(dx.r, dy.r, 1.0);
+    vec3 normal = normalize(vec3(dx.r, dy.r, 1.0));
     mat3 mvt = transpose(mat3(Ps, Pt, out_Normal));
 
     light = mvt * light;

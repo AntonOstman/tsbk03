@@ -14,6 +14,7 @@ och data=NULL
 
 30 st, onödigt många?
 
+
 # Hur löste du 1f (om du gjorde det)? Vilket/vilka filter? (Extrauppgift)
 
 # Bör trunkeringen göras i egen shader eller som del av en shader som gör något mer? Varför?

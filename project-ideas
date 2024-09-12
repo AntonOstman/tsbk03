@@ -1,4 +1,17 @@
 
 # Ideas
 
-path tracing seems fun :)
+global illumination methods ?
+
+path tracing seems fun :) -> basically not possible real time without denoising
+ray tracing? not new method but 
+denoise with spatial and temporal reuse
+
+voxel cone tracing: method for estimating local illumination using cones
+instant radiosiy: more like virtual light, indirect light sources act as real light source
+- Real-time stochatic lightcuts
+irradiance fields
+-loeaking and over-occlusion
+
+Radiance caching for real-time global illumination
+-unreal engine

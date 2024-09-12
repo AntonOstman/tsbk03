@@ -175,7 +175,19 @@ void DeformCylinder()
 	{
 		for (corner = 0; corner < kMaxCorners; corner++)
 		{
-			g_vertsRes[row][corner] = g_vertsOrg[row][corner];
+
+            if (weight[row] > 0.5){
+                // We translate and rotate the local coordinates for each vertex
+                vec3 trans = g_bones[1].pos;
+                mat4 TR = T(trans.x, trans.y, trans.z) * g_bones[1].rot;
+                g_vertsRes[row][corner] = TR * (g_vertsOrg[row][corner] - g_bones[1].pos);
+            }
+            else {
+                g_vertsRes[row][corner] = g_vertsOrg[row][corner];
+                /*g_vertsRes[row][corner] = g_bones[0].rot * g_vertsOrg[row][corner];    */
+            }
+
+
 			
 			// ----=========	Part 1: Stitching in CPU ===========-----
 			// Deform the cylindern from the skeleton in g_bones.
@@ -188,6 +200,7 @@ void DeformCylinder()
 			//
 			// row goes long the length of the cylinder,
 			// corner around each layer.
+            
 			
 			
 			// ---=========	Part 2: Skinning in CPU ===========------
