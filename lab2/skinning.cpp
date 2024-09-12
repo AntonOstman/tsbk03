@@ -45,7 +45,7 @@ vec3 g_normalsRes[kMaxRow][kMaxCorners];
 // vertex attributes sent to OpenGL
 vec3 g_boneWeights[kMaxRow][kMaxCorners];
 
-float weight[kMaxRow] = {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+float weight[kMaxRow] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
 
 Model *cylinderModel; // Collects all the above for drawing with glDrawElements
 
@@ -173,19 +173,16 @@ void DeformCylinder()
 	// för samtliga vertexar 
 	for (row = 0; row < kMaxRow; row++)
 	{
+        /*M = M * (weight[row] * T(trans.x, trans.y, trans.z) * g_bones[row].rot);*/
 		for (corner = 0; corner < kMaxCorners; corner++)
 		{
-
-            if (weight[row] > 0.5){
-                // We translate and rotate the local coordinates for each vertex
-                vec3 trans = g_bones[1].pos;
-                mat4 TR = T(trans.x, trans.y, trans.z) * g_bones[1].rot;
-                g_vertsRes[row][corner] = TR * (g_vertsOrg[row][corner] - g_bones[1].pos);
-            }
-            else {
-                g_vertsRes[row][corner] = g_vertsOrg[row][corner];
-                /*g_vertsRes[row][corner] = g_bones[0].rot * g_vertsOrg[row][corner];    */
-            }
+            // We translate and rotate the local coordinates for each vertex.
+            mat4 TR1 = (1 - weight[row]) * T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z) * g_bones[0].rot;
+            mat4 TR2 = weight[row] * T(g_bones[1].pos.x, g_bones[1].pos.y, g_bones[1].pos.z) * g_bones[1].rot;
+            g_vertsRes[row][corner] = TR1 * (g_vertsOrg[row][corner] - g_bones[0].pos);
+            g_vertsRes[row][corner] += TR2 * (g_vertsOrg[row][corner] - g_bones[1].pos);
+            /*g_vertsRes[row][corner] = g_vertsOrg[row][corner];*/
+            /*g_vertsRes[row][corner] = g_bones[0].rot * g_vertsOrg[row][corner];    */
 
 
 			
