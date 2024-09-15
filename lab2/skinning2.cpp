@@ -208,6 +208,14 @@ void DeformCylinder()
     {
       // ---------=========  PART 4 ===========---------
       // TODO: Deform the mesh using all bones
+      g_vertsRes[row][corner] = vec3(0.0);
+      mat4 curM = IdentityMatrix();
+      for (int b = 0; b < kMaxBones; b++){
+          curM = curM * T(g_bones[b].pos.x, g_bones[b].pos.y, g_bones[b].pos.z) * g_bones[b].rot;
+          g_vertsRes[row][corner] +=  vec3(g_boneWeights[row][corner][b] * curM * vec4((g_vertsOrg[row][corner] - g_bones[b].pos),1.0));
+          printMat4(curM);
+      }
+
       //
       // data you may use:
       // g_bonesRes[].rot
@@ -217,6 +225,7 @@ void DeformCylinder()
       // g_vertsRes
     }
   }
+  printf("done\n");
 }
 
 
@@ -355,7 +364,7 @@ int main(int argc, char **argv)
 			kMaxRow*kMaxCorners,
 			kMaxg_poly * 3);
 
-  g_shader = loadShaders("shader.vert" , "shader.frag");
+  g_shader = loadShaders("shader2.vert" , "shader.frag");
 
   glutMainLoop();
   exit(0);
