@@ -176,11 +176,13 @@ void DeformCylinder()
         /*M = M * (weight[row] * T(trans.x, trans.y, trans.z) * g_bones[row].rot);*/
 		for (corner = 0; corner < kMaxCorners; corner++)
 		{
+            g_vertsRes[row][corner] = g_vertsOrg[row][corner];
             // We translate and rotate the local coordinates for each vertex.
-            mat4 TR1 = (1 - weight[row]) * T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z) * g_bones[0].rot;
-            mat4 TR2 = weight[row] * T(g_bones[1].pos.x, g_bones[1].pos.y, g_bones[1].pos.z) * g_bones[1].rot;
-            g_vertsRes[row][corner] = TR1 * (g_vertsOrg[row][corner] - g_bones[0].pos);
-            g_vertsRes[row][corner] += TR2 * (g_vertsOrg[row][corner] - g_bones[1].pos);
+            /*mat4 TR1 = g_boneWeights[row][corner].x * T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z) * g_bones[0].rot;*/
+            /*mat4 TR2 = g_boneWeights[row][corner].y * T(g_bones[1].pos.x, g_bones[1].pos.y, g_bones[1].pos.z) * g_bones[1].rot;*/
+            /*g_vertsRes[row][corner] = vec3(TR1 * vec4((g_vertsOrg[row][corner] - g_bones[0].pos), 1.0));*/
+            /*g_vertsRes[row][corner] += vec3(TR2 * vec4((g_vertsOrg[row][corner] - g_bones[1].pos), 1.0));*/
+
             /*g_vertsRes[row][corner] = g_vertsOrg[row][corner];*/
             /*g_vertsRes[row][corner] = g_bones[0].rot * g_vertsOrg[row][corner];    */
 
@@ -272,7 +274,17 @@ void DrawCylinder()
 	glBindVertexArray(cylinderModel->vao);
 	glBindBuffer(GL_ARRAY_BUFFER, cylinderModel->vb);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vec3)*kMaxRow*kMaxCorners, g_vertsRes, GL_DYNAMIC_DRAW);
-	
+
+    mat4 M1 = T(g_bones[0].pos.x, g_bones[0].pos.y, g_bones[0].pos.z) * g_bones[0].rot;
+    mat4 M2 = T(g_bones[1].pos.x, g_bones[1].pos.y, g_bones[1].pos.z) * g_bones[1].rot;
+    /*g_vertsRes[row][corner] = TR1 * (g_vertsOrg[row][corner] - g_bones[0].pos);*/
+    /*g_vertsRes[row][corner] += TR2 * (g_vertsOrg[row][corner] - g_bones[1].pos);*/
+
+    glUniform3fv(glGetUniformLocation(g_shader, "pos1"), 1, &g_bones[0].pos.x);
+    glUniform3fv(glGetUniformLocation(g_shader, "pos2"), 1, &g_bones[1].pos.x);
+    glUniformMatrix4fv(glGetUniformLocation(g_shader, "M1"), GL_TRUE, 1, M1.m);
+    glUniformMatrix4fv(glGetUniformLocation(g_shader, "M2"), GL_TRUE, 1, M2.m);
+
 	DrawModel(cylinderModel, g_shader, "in_Position", "in_Normal", "in_TexCoord");
 }
 
