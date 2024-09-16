@@ -183,11 +183,6 @@ void DeformCylinder()
             /*g_vertsRes[row][corner] = vec3(TR1 * vec4((g_vertsOrg[row][corner] - g_bones[0].pos), 1.0));*/
             /*g_vertsRes[row][corner] += vec3(TR2 * vec4((g_vertsOrg[row][corner] - g_bones[1].pos), 1.0));*/
 
-            /*g_vertsRes[row][corner] = g_vertsOrg[row][corner];*/
-            /*g_vertsRes[row][corner] = g_bones[0].rot * g_vertsOrg[row][corner];    */
-
-
-			
 			// ----=========	Part 1: Stitching in CPU ===========-----
 			// Deform the cylindern from the skeleton in g_bones.
 			//
