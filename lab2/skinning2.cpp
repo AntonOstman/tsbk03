@@ -211,9 +211,16 @@ void DeformCylinder()
       g_vertsRes[row][corner] = vec3(0.0);
       mat4 curM = IdentityMatrix();
       for (int b = 0; b < kMaxBones; b++){
-          curM = curM * T(g_bones[b].pos.x, g_bones[b].pos.y, g_bones[b].pos.z) * g_bones[b].rot;
+          mat4 bT;
+          if (b == 0 ){
+              bT = T(g_bones[b].pos.x, g_bones[b].pos.y, g_bones[b].pos.z);
+          }
+          else{
+              bT = T(g_bones[b].pos.x - g_bones[b - 1].pos.x, g_bones[b].pos.y - g_bones[b - 1].pos.y, g_bones[b].pos.z- g_bones[b - 1].pos.z);
+          }
+
+          curM = curM *  bT * g_bonesRes[b].rot;
           g_vertsRes[row][corner] +=  vec3(g_boneWeights[row][corner][b] * curM * vec4((g_vertsOrg[row][corner] - g_bones[b].pos),1.0));
-          printMat4(curM);
       }
 
       //
@@ -225,7 +232,6 @@ void DeformCylinder()
       // g_vertsRes
     }
   }
-  printf("done\n");
 }
 
 
