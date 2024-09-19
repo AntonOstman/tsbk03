@@ -124,6 +124,15 @@ void loadMaterial(Material mt)
     glUniform1fv(glGetUniformLocation(shader, "shininess"), 1, &mt.shininess);
 }
 
+mat4 SetRotation(vec3 v, vec3 n, float radius)
+{
+    vec3 r = cross(v, n);
+    vec3 vn, vp;
+    SplitVector(v, n, &vn, &vp);
+
+    return ArbRotate(r, -Norm(vp)/radius);
+
+}
 //---------------------------------- physics update and billiard table rendering ----------------------------------
 void updateWorld()
 {
@@ -159,6 +168,12 @@ void updateWorld()
 	for (i = 0; i < kNumBalls; i++)
 	{
 		// YOUR CODE HERE
+        /*float scale = 3;*/
+        /*ball[i].R = Rx(scale * currentTime *ball[i].v.z) * Rz(scale * currentTime * ball[i].v.y);*/
+        // TODO What is the surface normal in coordinates?
+        vec3 surface = vec3(0,1,0);
+        mat4 diffrot = SetRotation(ball[i].v, surface, 10);
+        ball[i].R = diffrot * ball[i].R;
 	}
 
 	// Control rotation here to reflect
