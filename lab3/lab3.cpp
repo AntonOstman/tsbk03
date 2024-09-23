@@ -69,7 +69,7 @@ Material ballMt = { { 1.0, 1.0, 1.0, 1.0 }, { 1.0, 1.0, 1.0, 0.0 },
                 };
 
 
-enum {kNumBalls = 16}; // Change as desired, max 16
+enum {kNumBalls = 4}; // Change as desired, max 16
 
 //------------------------------Globals---------------------------------
 ModelTexturePair tableAndLegs, tableSurf;
@@ -127,11 +127,13 @@ void loadMaterial(Material mt)
 mat4 SetRotation(vec3 v, vec3 n, float radius)
 {
     vec3 r = cross(v, n);
+    // Why this below?
+    // Prob some good reason...
+    // vp is same as r?
     vec3 vn, vp;
     SplitVector(v, n, &vn, &vp);
 
     return ArbRotate(r, -Norm(vp)/radius);
-
 }
 //---------------------------------- physics update and billiard table rendering ----------------------------------
 void updateWorld()
@@ -158,21 +160,32 @@ void updateWorld()
 	}
 
 	// Detect collisions, calculate speed differences, apply forces (uppgift 2)
-	for (i = 0; i < kNumBalls; i++)
-        for (j = i+1; j < kNumBalls; j++)
-        {
-            // YOUR CODE HERE
+	for (i = 0; i < kNumBalls; i++){
+        for (j = i+1; j < kNumBalls; j++){
+            float diameter = 2*kBallSize;
+            float elasticity = 1;
+            
+            bool collision = Norm(ball[i].X - ball[j].X) < diameter;
+            vec3 collision_normal = normalize(vec3(ball[i].X.x - ball[j].X.x, ball[i].X.y - ball[j].X.y, ball[i].X.z - ball[j].X.z));
+            if (collision){
+                float vrel = dot((ball[i].v - ball[j].v), collision_normal);
+                float jj = -(elasticity + 1) * vrel / (1 / ball[i].mass + 1 / ball[j].mass);
+                vec3 imp = jj * collision_normal;
+                ball[i].F =  imp/deltaT;
+                ball[i].T =  CrossProduct(collision_normal, imp);
+                ball[j].F =  -imp/deltaT;
+                ball[j].T =  CrossProduct(-collision_normal, imp);
+                printf("collision\n");
+            }
         }
+    }
 
 	// Control rotation here to movement only, no friction (uppgift 1)
 	for (i = 0; i < kNumBalls; i++)
 	{
 		// YOUR CODE HERE
-        /*float scale = 3;*/
-        /*ball[i].R = Rx(scale * currentTime *ball[i].v.z) * Rz(scale * currentTime * ball[i].v.y);*/
-        // TODO What is the surface normal in coordinates?
         vec3 surface = vec3(0,1,0);
-        mat4 diffrot = SetRotation(ball[i].v, surface, 10);
+        mat4 diffrot = SetRotation(ball[i].v, surface, kBallSize);
         ball[i].R = diffrot * ball[i].R;
 	}
 
@@ -180,6 +193,7 @@ void updateWorld()
 	// friction against floor, simplified as well as more correct (uppgift 3)
 	for (i = 0; i < kNumBalls; i++)
 	{
+         
 		// YOUR CODE HERE
 	}
 
