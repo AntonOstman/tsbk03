@@ -162,30 +162,48 @@ void updateWorld()
 	// Detect collisions, calculate speed differences, apply forces (uppgift 2)
 	for (i = 0; i < kNumBalls; i++){
         for (j = i+1; j < kNumBalls; j++){
-            float diameter = 2*kBallSize;
-            float elasticity = 1;
+            float diameter = 2.0*kBallSize;
+            float elasticity = 0;
             
-            bool collision = Norm(ball[i].X - ball[j].X) < diameter;
-            vec3 collision_normal = normalize(vec3(ball[i].X.x - ball[j].X.x, ball[i].X.y - ball[j].X.y, ball[i].X.z - ball[j].X.z));
+            float dist = Norm(ball[i].X - ball[j].X);
+            bool collision = dist < diameter;
+            vec3 collision_normal = ball[i].X - ball[j].X;
+            collision_normal.y = 0;
+            collision_normal = Normalize(collision_normal);
+
             if (collision){
                 float vrel = dot((ball[i].v - ball[j].v), collision_normal);
-                float jj = -(elasticity + 1) * vrel / (1 / ball[i].mass + 1 / ball[j].mass);
+                float jj = -(elasticity + 1.0) * vrel / ((1.0 / ball[i].mass) + (1.0 / ball[j].mass));
                 vec3 imp = jj * collision_normal;
-                ball[i].F =  imp/deltaT;
-                ball[i].T =  CrossProduct(collision_normal, imp);
-                ball[j].F =  -imp/deltaT;
-                ball[j].T =  CrossProduct(-collision_normal, imp);
+                ball[i].F +=  imp/deltaT;
+                ball[i].T +=  CrossProduct(collision_normal, imp);
+                ball[j].F +=  -imp/deltaT;
+                ball[j].T +=  CrossProduct(-collision_normal, imp);
+
+                ball[j].X += (diameter - dist) * collision_normal;
+                ball[j].X -= (diameter - dist) * collision_normal;
+
                 printf("collision\n");
             }
         }
     }
+    vec3 total_p = SetVector(0,0,0);
+    vec3 kinetic = SetVector(0,0,0);
+    for (int i = 0; i < kNumBalls; i++){
+        /*ball[i].T +=  CrossProduct(collision_normal, imp);*/
+        total_p += ball[i].P;
+        kinetic += Norm(ball[i].v) * ball[i].mass;
+        printf("ball y %f\n", ball[i].X.y);
+    }
+    printf("system P %f\n", (total_p.x) + (total_p.y) + (total_p.z));
+    printf("system mv^2 %f\n", abs(kinetic.x) + abs(kinetic.y) + abs(kinetic.z));
 
 	// Control rotation here to movement only, no friction (uppgift 1)
 	for (i = 0; i < kNumBalls; i++)
 	{
 		// YOUR CODE HERE
         vec3 surface = vec3(0,1,0);
-        mat4 diffrot = SetRotation(ball[i].v, surface, kBallSize);
+        mat4 diffrot = SetRotation(ball[i].v, surface, 20*kBallSize);
         ball[i].R = diffrot * ball[i].R;
 	}
 
@@ -307,13 +325,29 @@ void init()
 		ball[i].R = IdentityMatrix();
 	}
 	ball[0].X = vec3(0, 0, 0);
-	ball[1].X = vec3(0, 0, 0.5);
+	ball[1].X = vec3(0.2, 0, 0.5);
 	ball[2].X = vec3(0.0, 0, 1.0);
-	ball[3].X = vec3(0, 0, 1.5);
-	ball[0].P = vec3(0, 0, 0);
-	ball[1].P = vec3(0, 0, 0);
-	ball[2].P = vec3(0, 0, 0);
-	ball[3].P = vec3(0, 0, 1.00);
+	ball[3].X = vec3(0.3, 0, 1.5);
+	ball[0].P = vec3(0.5, 0, 0);
+	ball[1].P = vec3(0, 0, 0.5);
+	ball[2].P = vec3(0.5, 0, 0);
+	ball[3].P = vec3(1.0, 0, 1.00);
+	ball[3].mass = 2.0;
+	/*for (i = 0; i < kNumBalls; i++)*/
+	/*{*/
+	/*	ball[i].mass = 1.0;*/
+	/*	ball[i].X = vec3(0.0, 0.0, 0.0);*/
+	/*	ball[i].P = vec3(((float)(i % 13))/ 50.0, 0.0, ((float)(i % 15))/50.0);*/
+	/*	ball[i].R = IdentityMatrix();*/
+	/*}*/
+	/*ball[0].X = vec3(0, 0, 0);*/
+	/*ball[1].X = vec3(0.0, 0, 0.5);*/
+	/*ball[2].X = vec3(0.0, 0, 1.0);*/
+	/*ball[3].X = vec3(0.0, 0, 1.5);*/
+	/*ball[0].P = vec3(0.0, 0, 0);*/
+	/*ball[1].P = vec3(0, 0, 0.0);*/
+	/*ball[2].P = vec3(0.0, 0, 0);*/
+	/*ball[3].P = vec3(0.0, 0, 1.00);*/
 
     cam = vec3(0, 1.2, 2.5);
     point = vec3(0, 0, 1.0);
