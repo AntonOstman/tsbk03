@@ -69,7 +69,7 @@ Material ballMt = { { 1.0, 1.0, 1.0, 1.0 }, { 1.0, 1.0, 1.0, 0.0 },
                 };
 
 
-enum {kNumBalls = 4}; // Change as desired, max 16
+enum {kNumBalls = 16}; // Change as desired, max 16
 
 //------------------------------Globals---------------------------------
 ModelTexturePair tableAndLegs, tableSurf;
@@ -163,7 +163,7 @@ void updateWorld()
 	for (i = 0; i < kNumBalls; i++){
         for (j = i+1; j < kNumBalls; j++){
             float diameter = 2.0*kBallSize;
-            float elasticity = 0;
+            float elasticity = 1.0;
             
             float dist = Norm(ball[i].X - ball[j].X);
             bool collision = dist < diameter;
@@ -171,17 +171,21 @@ void updateWorld()
             collision_normal.y = 0;
             collision_normal = Normalize(collision_normal);
 
-            if (collision){
+            bool wap = dot(ball[i].v, ball[j].X - ball[i].X) >= 0;
+            // only allow collisoin when overlap is 10% or less
+            /*bool mindist = diameter - dist > diameter * 0.2;*/
+            /*bool speed = Norm(ball[i].v) > 0.001;*/
+            /*bool wap2 = dot(ball[i].v, ball[j].v) >= 0;*/
+
+            if (collision && wap){
                 float vrel = dot((ball[i].v - ball[j].v), collision_normal);
                 float jj = -(elasticity + 1.0) * vrel / ((1.0 / ball[i].mass) + (1.0 / ball[j].mass));
                 vec3 imp = jj * collision_normal;
                 ball[i].F +=  imp/deltaT;
-                ball[i].T +=  CrossProduct(collision_normal, imp);
                 ball[j].F +=  -imp/deltaT;
-                ball[j].T +=  CrossProduct(-collision_normal, imp);
 
-                ball[j].X += (diameter - dist) * collision_normal;
-                ball[j].X -= (diameter - dist) * collision_normal;
+                ball[i].X += (diameter*1.05 - dist) * collision_normal;
+                ball[j].X -= (diameter*1.05 - dist) * collision_normal;
 
                 printf("collision\n");
             }
@@ -189,13 +193,15 @@ void updateWorld()
     }
     vec3 total_p = SetVector(0,0,0);
     vec3 kinetic = SetVector(0,0,0);
+    vec3 torq = SetVector(0,0,0);
     for (int i = 0; i < kNumBalls; i++){
         /*ball[i].T +=  CrossProduct(collision_normal, imp);*/
-        total_p += ball[i].P;
+        total_p += vec3(abs(ball[i].P.x) + abs(ball[i].P.y) + abs(ball[i].P.z));
         kinetic += Norm(ball[i].v) * ball[i].mass;
+        torq += Norm(ball[i].T) * ball[i].mass;
         printf("ball y %f\n", ball[i].X.y);
     }
-    printf("system P %f\n", (total_p.x) + (total_p.y) + (total_p.z));
+    printf("system P %f\n", abs(total_p.x) + abs(total_p.y) + abs(total_p.z));
     printf("system mv^2 %f\n", abs(kinetic.x) + abs(kinetic.y) + abs(kinetic.z));
 
 	// Control rotation here to movement only, no friction (uppgift 1)
@@ -203,17 +209,27 @@ void updateWorld()
 	{
 		// YOUR CODE HERE
         vec3 surface = vec3(0,1,0);
-        mat4 diffrot = SetRotation(ball[i].v, surface, 20*kBallSize);
-        ball[i].R = diffrot * ball[i].R;
+        /*mat4 diffrot = SetRotation(ball[i].v, surface, 20*kBallSize);*/
+        /*ball[i].R = diffrot * ball[i].R;*/
 	}
 
 	// Control rotation here to reflect
 	// friction against floor, simplified as well as more correct (uppgift 3)
 	for (i = 0; i < kNumBalls; i++)
 	{
+        float friction  = 0.1;
+        vec3 surface = vec3(0, -kBallSize, 0);
+        /*vec3 surface = vec3(0, 1, 0);*/
+        vec3 Ff = (ball[i].v + CrossProduct(ball[i].omega, surface)) * friction;
+        /*mat4 diffrot = SetRotation(ball[i].omega, surface, kBallSize);*/
+        /*ball[i].R = diffrot * ball[i].R;*/
+        /*vec3 Fn = vec3(0, 0, ball[i].mass * friction * g);*/
+        ball[i].T +=  CrossProduct(surface, -Ff);
+        ball[i].F -=  Ff;
          
 		// YOUR CODE HERE
 	}
+    printf("system T %f\n", abs(torq.x) + abs(torq.y) + abs(torq.z));
 
 // Update state, follows the book closely
 	for (i = 0; i < kNumBalls; i++)
@@ -223,7 +239,15 @@ void updateWorld()
 
 		// Note: omega is not set. How do you calculate it? (del av uppgift 2)
 		// YOUR CODE HERE
+        float ii = 2.0/5.0 * ball[i].mass * kBallSize * kBallSize;
+        mat3 I = {ii,0,0,
+                  0,ii,0,
+                  0,0,ii};
 
+        ball[i].omega = InvertMat3(I) * ball[i].L;
+        /*ball[j].omega = ball[j].omega - (InvertMat3(I) * ball[j].T);*/
+
+		/*ball[i].omega = ball[i].v/kBallSize;*/
 //		v := P * 1/mass
 		ball[i].v = ball[i].P * 1.0/(ball[i].mass);
 //		X := X + v*dT
@@ -317,22 +341,6 @@ void init()
 	free(textureStr);
 
     // Initialize ball data, positions etc
-	for (i = 0; i < kNumBalls; i++)
-	{
-		ball[i].mass = 1.0;
-		ball[i].X = vec3(0.0, 0.0, 0.0);
-		ball[i].P = vec3(((float)(i % 13))/ 50.0, 0.0, ((float)(i % 15))/50.0);
-		ball[i].R = IdentityMatrix();
-	}
-	ball[0].X = vec3(0, 0, 0);
-	ball[1].X = vec3(0.2, 0, 0.5);
-	ball[2].X = vec3(0.0, 0, 1.0);
-	ball[3].X = vec3(0.3, 0, 1.5);
-	ball[0].P = vec3(0.5, 0, 0);
-	ball[1].P = vec3(0, 0, 0.5);
-	ball[2].P = vec3(0.5, 0, 0);
-	ball[3].P = vec3(1.0, 0, 1.00);
-	ball[3].mass = 2.0;
 	/*for (i = 0; i < kNumBalls; i++)*/
 	/*{*/
 	/*	ball[i].mass = 1.0;*/
@@ -341,13 +349,31 @@ void init()
 	/*	ball[i].R = IdentityMatrix();*/
 	/*}*/
 	/*ball[0].X = vec3(0, 0, 0);*/
-	/*ball[1].X = vec3(0.0, 0, 0.5);*/
+	/*ball[1].X = vec3(0.2, 0, 0.5);*/
 	/*ball[2].X = vec3(0.0, 0, 1.0);*/
-	/*ball[3].X = vec3(0.0, 0, 1.5);*/
-	/*ball[0].P = vec3(0.0, 0, 0);*/
-	/*ball[1].P = vec3(0, 0, 0.0);*/
-	/*ball[2].P = vec3(0.0, 0, 0);*/
-	/*ball[3].P = vec3(0.0, 0, 1.00);*/
+	/*ball[3].X = vec3(0.3, 0, 1.5);*/
+	/*ball[0].P = vec3(0.5, 0, 0);*/
+	/*ball[1].P = vec3(0, 0, 0.5);*/
+	/*ball[2].P = vec3(0.5, 0, 0);*/
+	/*ball[3].P = vec3(1.0, 0, 1.00);*/
+	/*ball[3].mass = 2.0;*/
+	for (i = 0; i < kNumBalls; i++)
+	{
+		ball[i].mass = 1.0;
+		ball[i].X = vec3(0.0, 0.0, 0.0);
+		ball[i].P = vec3(((float)(i % 13))/ 50.0, 0.0, ((float)(i % 15))/50.0);
+		ball[i].R = IdentityMatrix();
+        ball[i].v = vec3(0.0, 0, 0);
+	}
+	ball[0].X = vec3(0, 0, 0);
+	ball[1].X = vec3(0.0, 0, 0.5);
+	ball[2].X = vec3(0.0, 0, 1.0);
+	ball[3].X = vec3(0.0, 0, 1.5);
+	ball[0].P = vec3(0.0, 0, 0);
+	ball[1].P = vec3(0, 0, 0.0);
+	ball[2].P = vec3(0.0, 0, 0);
+	ball[3].P = vec3(0.0, 0, 1.00);
+
 
     cam = vec3(0, 1.2, 2.5);
     point = vec3(0, 0, 1.0);
