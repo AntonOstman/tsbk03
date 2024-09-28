@@ -14,6 +14,8 @@
 #include "GL_utilities.h"
 #include "LittleOBJLoader.h"
 #include "LoadTGA.h"
+
+#include <unistd.h>
 // uses framework Cocoa
 // uses framework OpenGL
 
@@ -22,6 +24,8 @@ const int initWidth=800, initHeight=800;
 
 #define NEAR 1.0
 #define FAR 100.0
+
+int collisions = 0;
 
 #define kBallSize 0.1
 
@@ -170,24 +174,28 @@ void updateWorld()
             vec3 collision_normal = ball[i].X - ball[j].X;
             collision_normal.y = 0;
             collision_normal = Normalize(collision_normal);
+            vec3 vrel = ball[i].v - ball[j].v;
+            vec3 posrel = normalize(ball[j].X - ball[i].X);
 
-            bool wap = dot(ball[i].v, ball[j].X - ball[i].X) >= 0;
-            // only allow collisoin when overlap is 10% or less
-            /*bool mindist = diameter - dist > diameter * 0.2;*/
-            /*bool speed = Norm(ball[i].v) > 0.001;*/
-            /*bool wap2 = dot(ball[i].v, ball[j].v) >= 0;*/
+            bool collision_course = dot(vrel, posrel) >= 0;
 
-            if (collision && wap){
-                float vrel = dot((ball[i].v - ball[j].v), collision_normal);
-                float jj = -(elasticity + 1.0) * vrel / ((1.0 / ball[i].mass) + (1.0 / ball[j].mass));
+            if (collision && collision_course){
+                float vrelcollision = dot((ball[i].v - ball[j].v), collision_normal);
+                float jj = -(elasticity + 1.0) * vrelcollision / ((1.0 / ball[i].mass) + (1.0 / ball[j].mass));
                 vec3 imp = jj * collision_normal;
-                ball[i].F +=  imp/deltaT;
-                ball[j].F +=  -imp/deltaT;
+                /*ball[i].F +=  imp/deltaT;*/
+                /*ball[j].F +=  -imp/deltaT;*/
 
-                ball[i].X += (diameter*1.05 - dist) * collision_normal;
-                ball[j].X -= (diameter*1.05 - dist) * collision_normal;
+                ball[i].P = ball[i].P + imp;
+                ball[j].P = ball[i].P - imp;
 
-                printf("collision\n");
+                collisions += 1;
+                /*printf("%d %d collisions %d wap %d\n", i, j, collisions, collision_course);*/
+                /*printVec3(vrel);*/
+                /*printVec3(posrel);*/
+                /*printVec3(ball[i].v);*/
+                /*printVec3(ball[j].v);*/
+
             }
         }
     }
@@ -199,10 +207,10 @@ void updateWorld()
         total_p += vec3(abs(ball[i].P.x) + abs(ball[i].P.y) + abs(ball[i].P.z));
         kinetic += Norm(ball[i].v) * ball[i].mass;
         torq += Norm(ball[i].T) * ball[i].mass;
-        printf("ball y %f\n", ball[i].X.y);
+        /*printf("ball y %f\n", ball[i].X.y);*/
     }
-    printf("system P %f\n", abs(total_p.x) + abs(total_p.y) + abs(total_p.z));
-    printf("system mv^2 %f\n", abs(kinetic.x) + abs(kinetic.y) + abs(kinetic.z));
+    /*printf("system P %f\n", abs(total_p.x) + abs(total_p.y) + abs(total_p.z));*/
+    /*printf("system mv^2 %f\n", abs(kinetic.x) + abs(kinetic.y) + abs(kinetic.z));*/
 
 	// Control rotation here to movement only, no friction (uppgift 1)
 	for (i = 0; i < kNumBalls; i++)
@@ -219,17 +227,13 @@ void updateWorld()
 	{
         float friction  = 0.1;
         vec3 surface = vec3(0, -kBallSize, 0);
-        /*vec3 surface = vec3(0, 1, 0);*/
         vec3 Ff = (ball[i].v + CrossProduct(ball[i].omega, surface)) * friction;
-        /*mat4 diffrot = SetRotation(ball[i].omega, surface, kBallSize);*/
-        /*ball[i].R = diffrot * ball[i].R;*/
-        /*vec3 Fn = vec3(0, 0, ball[i].mass * friction * g);*/
         ball[i].T +=  CrossProduct(surface, -Ff);
         ball[i].F -=  Ff;
          
 		// YOUR CODE HERE
 	}
-    printf("system T %f\n", abs(torq.x) + abs(torq.y) + abs(torq.z));
+    /*printf("system T %f\n", abs(torq.x) + abs(torq.y) + abs(torq.z));*/
 
 // Update state, follows the book closely
 	for (i = 0; i < kNumBalls; i++)
