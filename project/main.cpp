@@ -25,9 +25,21 @@ const int initWidth = 1920, initHeight = 1080;
 
 /*#define NUM_LIGHTS 4*/
 
-mat4 projectionMatrix;
-mat4 viewMatrix, modelToWorldMatrix;
+typedef struct {
+    float anglex;
+    float angley;
+    float anglez;
 
+    float tx;
+    float ty;
+    float tz;
+} pose;
+
+pose campose;
+pose boxpose;
+
+mat4 projectionMatrix;
+mat4 viewMatrix;
 
 GLfloat square[] = {
 							-1,-1,0,
@@ -44,7 +56,7 @@ GLuint squareIndices[] = {0, 1, 2, 0, 2, 3};
 Model* squareModel;
 
 //----------------------Globals-------------------------------------------------
-Model *model1;
+Model **model1;
 FBOstruct *fbo1, *fbo2, *fbo3;
 GLuint phongshader = 0, plaintextureshader = 0, lowpassshader = 0, lowpassshadery = 0, lowpassshaderx = 0, thresholdshader = 0, combineshader = 0;
 
@@ -90,7 +102,7 @@ void init(void)
 	fbo3 = initFBO(initWidth, initHeight, 0);
 
 	// load the model
-	model1 = LoadModel("stanford-bunny.obj");
+	model1 = LoadModelSet("CornellBox-Original.obj");
 
 	squareModel = LoadDataToModel(
 			(vec3 *)square, NULL, (vec2 *)squareTexCoord, NULL,
@@ -99,8 +111,22 @@ void init(void)
 	vec3 cam = vec3(0, 5, 15);
 	vec3 point = vec3(0, 1, 0);
 	vec3 up = vec3(0, 1, 0);
+
+    boxpose.anglex = 0;
+    boxpose.angley = 0;
+    boxpose.anglez = 0;
+    boxpose.tx = 0;
+    boxpose.ty = -9.5;
+    boxpose.tz = -8.0;
+
+    campose.anglex = 0;
+    campose.angley = 0;
+    campose.anglez = 0;
+    campose.tx = 0;
+    campose.ty = 0;
+    campose.tz = 0;
+
 	viewMatrix = lookAtv(cam, point, up);
-	modelToWorldMatrix = IdentityMatrix();
 }
 
 //-------------------------------callback functions------------------------------------------
@@ -122,10 +148,12 @@ void display(void)
 	// Activate shader program
 	glUseProgram(phongshader);
 
+    mat4 modelToWorldMatrix = Rx(boxpose.angley) * Rz(boxpose.anglez);
 	vm2 = viewMatrix * modelToWorldMatrix;
 	// Scale and place bunny since it is too small
-	vm2 = vm2 * T(0, -8.5, 0);
-	vm2 = vm2 * S(80,80,80);
+	vm2 = vm2 * T(boxpose.tx, boxpose.ty, boxpose.tz);
+    float scale = 15;
+	vm2 = vm2 * S(scale, scale, scale);
 
 	glUniformMatrix4fv(glGetUniformLocation(phongshader, "projectionMatrix"), 1, GL_TRUE, projectionMatrix.m);
 	glUniformMatrix4fv(glGetUniformLocation(phongshader, "modelviewMatrix"), 1, GL_TRUE, vm2.m);
@@ -137,7 +165,14 @@ void display(void)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	DrawModel(model1, phongshader, "in_Position", "in_Normal", NULL);
+
+    vec3 ka = vec3(0,1,0);
+    for (int i = 0; i < 6; i++)
+    {
+        
+        glUniform3fv(glGetUniformLocation(phongshader, "ka"), 1, &model1[i]->material->Ka.x);
+        DrawModel(model1[i], phongshader, "in_Position", "in_Normal", NULL);
+    }
 
 	// Done rendering the FBO! Set up for rendering on screen, using the result as texture!
 
@@ -170,7 +205,7 @@ void reshape(GLsizei w, GLsizei h)
 {
 	glViewport(0, 0, w, h);
 	GLfloat ratio = (GLfloat) w / (GLfloat) h;
-	projectionMatrix = perspective(90, ratio, 1.0, 1000);
+	projectionMatrix = perspective(100, ratio, 1.0, 1000);
 }
 
 // Trackball
@@ -199,18 +234,61 @@ void mouseDragged(int x, int y)
 	p.x = -(prevy - y);
 	p.z = 0;
 
+
 	// Create a rotation around this axis and premultiply it on the model-to-world matrix
 	// Limited to fixed camera! Will be wrong if the camera is moved!
 
-	m = ArbRotate(p, sqrt(p.x*p.x + p.y*p.y) / 50.0); // Rotation in view coordinates	
-	modelToWorldMatrix = Mult(m, modelToWorldMatrix);
+	/*m = ArbRotate(p, sqrt(p.x*p.x + p.y*p.y) / 50.0); // Rotation in view coordinates	*/
+	/*modelToWorldMatrix = Mult(m, modelToWorldMatrix);*/
+    boxpose.anglez += (x - prevx) / 500.0;
+    boxpose.angley += (y - prevy) / 500.0;
 	
 	prevx = x;
 	prevy = y;
 	
 	glutPostRedisplay();
 }
+unsigned char prev_key;
 
+void translate(float x, float y, float z, mat4* matrix){
+    matrix->m[3] = matrix->m[3] + x;
+    matrix->m[7] = matrix->m[7] + y; 
+    matrix->m[11] = matrix->m[11] + z; 
+    /*printf("x: %f, y: %f, z: %f\n", matrix->m[3], matrix->m[7], matrix->m[11]);*/
+}
+
+void move(unsigned char key, mat4* matrix, const char* keyset){
+    float speed = 0.8;
+
+    if (key == keyset[0]){
+        translate(speed, 0.0, 0.0, matrix);
+    }
+    if (key == keyset[1]){
+       translate(0.0, speed ,0.0, matrix);
+    }
+    if (key == keyset[2]){
+        translate(0.0, 0, speed, matrix);
+    }
+    if (key == keyset[3]){
+        translate(-speed, 0, 0, matrix);
+    }
+    if (key == keyset[4]){
+        translate(0.0, -speed, 0.0, matrix);
+    }
+    if (key == keyset[5]){
+        translate(0.0, 0.0, -speed, matrix);
+    }
+}
+
+void keyPressed(unsigned char key, int xx, int yy) {
+
+    const char* keyset = "aYwdys";
+    mat4 posi = mat4(0);
+    move(key, &posi, keyset);
+    boxpose.tx += posi.m[3];
+    boxpose.ty += posi.m[7];
+    boxpose.tz += posi.m[11];
+}
 
 //-----------------------------main-----------------------------------------------
 int main(int argc, char *argv[])
@@ -224,6 +302,7 @@ int main(int argc, char *argv[])
 	glutCreateWindow ("Render to texture with FBO");
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
+	glutKeyboardFunc(keyPressed);
 	glutMouseFunc(mouseUpDown);
 	glutMotionFunc(mouseDragged);
 	glutRepeatingTimer(50);

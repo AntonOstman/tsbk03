@@ -225,7 +225,7 @@ void updateWorld()
 	// friction against floor, simplified as well as more correct (uppgift 3)
 	for (i = 0; i < kNumBalls; i++)
 	{
-        float friction  = 0.1;
+        float friction  = 3.0;
         vec3 surface = vec3(0, -kBallSize, 0);
         vec3 Ff = (ball[i].v + CrossProduct(ball[i].omega, surface)) * friction;
         ball[i].T +=  CrossProduct(surface, -Ff);
@@ -365,7 +365,7 @@ void init()
 	{
 		ball[i].mass = 1.0;
 		ball[i].X = vec3(0.0, 0.0, 0.0);
-		ball[i].P = vec3(((float)(i % 13))/ 50.0, 0.0, ((float)(i % 15))/50.0);
+		ball[i].P = vec3(2.0 * ((float)(i % 13))/ 50.0, 0.0, 2.0 * ((float)(i % 15))/50.0);
 		ball[i].R = IdentityMatrix();
         ball[i].v = vec3(0.0, 0, 0);
 	}
@@ -376,7 +376,7 @@ void init()
 	ball[0].P = vec3(0.0, 0, 0);
 	ball[1].P = vec3(0, 0, 0.0);
 	ball[2].P = vec3(0.0, 0, 0);
-	ball[3].P = vec3(0.0, 0, 1.00);
+	ball[3].P = vec3(0.0, 0, 7.00);
 
 
     cam = vec3(0, 1.2, 2.5);

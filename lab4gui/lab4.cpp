@@ -40,7 +40,7 @@ void SpriteBehavior() // Your code!
             continue;
         }
 
-        float flocking_dist = 200.0;
+        float flocking_dist = 100.0;
 
         SpritePtr spritei = gSpriteRoot;
 
@@ -91,7 +91,7 @@ void SpriteBehavior() // Your code!
             sprite->speed += normalize(direction) * cohesionWeight;
         }
 
-        if (Norm(scary->position - sprite->position) < 300) {
+        if (Norm(scary->position - sprite->position) < 100) {
             float weight = 100.0/Norm(scary->position - sprite->position);
             sprite->speed += -normalize(scary->position - sprite->position) * weight;
         }
@@ -168,8 +168,8 @@ void Init()
     foodFace = GetFace("bilder/mat.tga"); // Food
 
     scary = NewSprite(dogFace, 300, 200, 1, 1);
-    for (int i = 0; i < 10; i ++){
-        NewSprite(sheepFace, i*20, 200, 1, 1);
+    for (int i = 0; i < 100; i ++){
+        NewSprite(sheepFace, i*2, 200, 1, 1);
     }
     NewSprite(sheepFace, 200, 100, 1.5, -1);
     NewSprite(sheepFace, 250, 200, -1, 1.5);
