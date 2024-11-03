@@ -116,7 +116,7 @@ void init(void)
     boxpose.angley = 0;
     boxpose.anglez = 0;
     boxpose.tx = 0;
-    boxpose.ty = -9.5;
+    boxpose.ty = -9.5 - 0.8*4;
     boxpose.tz = -8.0;
 
     campose.anglex = 0;
@@ -129,11 +129,33 @@ void init(void)
 	viewMatrix = lookAtv(cam, point, up);
 }
 
+
+/*
+   @param sceneFBO - fbo with rendered scene
+   @param intermediateFBO - intermediate fbo used in a ping pong step
+   @param fboOut - Rendered scene with added bloom effect
+
+   Screen space blooming effect
+*/
+
+void addBloom(FBOstruct *sceneFBO, FBOstruct *intermediateFBO, FBOstruct *fboOut, 
+              GLuint thresholdingshader, GLuint lowpassx, GLuint lowpassy, GLuint combiningshader)
+{
+   runfilter(thresholdingshader, sceneFBO, 0L, intermediateFBO);
+
+   for (int i = 0; i< 30; i++){
+       runfilter(lowpassx, intermediateFBO, 0L, fboOut);
+       runfilter(lowpassy, fboOut, 0L, intermediateFBO);
+   }
+
+   runfilter(combiningshader, sceneFBO, intermediateFBO, fboOut);
+}
+
+
+
 //-------------------------------callback functions------------------------------------------
 void display(void)
 {
-	mat4 vm2;
-	
 	// This function is called whenever it is time to render
 	//  a new frame; due to the idle()-function below, this
 	//  function will get called several times per second
@@ -149,14 +171,14 @@ void display(void)
 	glUseProgram(phongshader);
 
     mat4 modelToWorldMatrix = Rx(boxpose.angley) * Rz(boxpose.anglez);
-	vm2 = viewMatrix * modelToWorldMatrix;
 	// Scale and place bunny since it is too small
-	vm2 = vm2 * T(boxpose.tx, boxpose.ty, boxpose.tz);
+	modelToWorldMatrix = modelToWorldMatrix * T(boxpose.tx, boxpose.ty, boxpose.tz);
     float scale = 15;
-	vm2 = vm2 * S(scale, scale, scale);
+	modelToWorldMatrix = modelToWorldMatrix * S(scale, scale, scale);
 
 	glUniformMatrix4fv(glGetUniformLocation(phongshader, "projectionMatrix"), 1, GL_TRUE, projectionMatrix.m);
-	glUniformMatrix4fv(glGetUniformLocation(phongshader, "modelviewMatrix"), 1, GL_TRUE, vm2.m);
+	glUniformMatrix4fv(glGetUniformLocation(phongshader, "viewMatrix"), 1, GL_TRUE, viewMatrix.m);
+	glUniformMatrix4fv(glGetUniformLocation(phongshader, "worldMatrix"), 1, GL_TRUE, modelToWorldMatrix.m);
 	glUniform1i(glGetUniformLocation(phongshader, "texUnit"), 0);
 
 	// Enable Z-buffering
@@ -165,12 +187,15 @@ void display(void)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-
-    vec3 ka = vec3(0,1,0);
-    for (int i = 0; i < 6; i++)
+    vec3 lightSource = vec3(-0.24, 1.98, 0.16);
+    for (int i = 0; model1[i] != NULL; i++)
     {
-        
         glUniform3fv(glGetUniformLocation(phongshader, "ka"), 1, &model1[i]->material->Ka.x);
+        glUniform3fv(glGetUniformLocation(phongshader, "kd"), 1, &model1[i]->material->Kd.x);
+        glUniform3fv(glGetUniformLocation(phongshader, "ks"), 1, &model1[i]->material->Ks.x);
+        glUniform3fv(glGetUniformLocation(phongshader, "ke"), 1, &model1[i]->material->Ke.x);
+        glUniform3fv(glGetUniformLocation(phongshader, "lightSource"), 1, &lightSource.x);
+
         DrawModel(model1[i], phongshader, "in_Position", "in_Normal", NULL);
     }
 
@@ -178,15 +203,17 @@ void display(void)
 
 	/*glFlush(); // Can cause flickering on some systems. Can also be necessary to make drawing complete.*/
 
-    runfilter(thresholdshader, fbo1, 0L, fbo2);
+   /*runfilter(thresholdshader, fbo1, 0L, fbo2);*/
+   /**/
+   /*for (int i = 0; i< 30; i++){*/
+   /*    runfilter(lowpassshaderx, fbo2, 0L, fbo3);*/
+   /*    runfilter(lowpassshadery, fbo3, 0L, fbo2);*/
+   /*}*/
+   /**/
+   /*runfilter(combineshader, fbo1, fbo2, fbo3);*/
 
-    for (int i = 0; i< 30; i++){
-        runfilter(lowpassshaderx, fbo2, 0L, fbo3);
-        runfilter(lowpassshadery, fbo3, 0L, fbo2);
-    }
-
-    runfilter(combineshader, fbo1, fbo2, fbo3);
-
+    addBloom(fbo1, fbo2, fbo3, thresholdshader, lowpassshaderx, lowpassshadery, combineshader);
+	/*useFBO(0L, fbo3, 0L);*/
 	useFBO(0L, fbo3, 0L);
 
 	glClearColor(0.0,0.0,0.0,0.0);
@@ -200,6 +227,7 @@ void display(void)
 
 	glutSwapBuffers();
 }
+
 
 void reshape(GLsizei w, GLsizei h)
 {

@@ -10,31 +10,38 @@
 out vec4 outColor;
 in vec3 viewNormal; // Phong
 in vec3 worldNormal; // Phong (specular)
-in vec3 exSurface; // Phong (specular)
+in vec3 worldSurface; // Phong (specular)
+in vec3 viewSurface; // Phong (specular)
 
 uniform vec3 ka;
+uniform vec3 ke;
+uniform vec3 kd;
+uniform vec3 ks;
+
+uniform vec3 lightSource;
+uniform mat4 worldMatrix;
+uniform mat4 viewMatrix;
 
 void main(void)
 {
-	const vec3 light = 1.1f * vec3(0.58, 0.58, 0.58); // Given in VIEW coordinates! You usually specify light sources in world coordinates.
-	float diffuse, specular, shade;
-    vec3 ambient;
+    // TODO same for all, should be done on cpu 
+	// vec3 light = viewSurface; // Light position in view
+	// vec3 light = vec3(mat3(modelviewMatrix) * vec4(lightSource - viewSurface, 1.0));
+	vec3 lightIncident = normalize(mat3(viewMatrix) * (lightSource - worldSurface));
 
-    ambient = vec3(normalize(worldNormal));
-
+	float diffuse, specular;
 	// Diffuse
-	diffuse = dot(normalize(viewNormal), light);
+	diffuse = dot(normalize(viewNormal), lightIncident);
 	diffuse = max(0.0, diffuse); // No negative light
 	
 	// Specular
-	vec3 r = reflect(-light, normalize(viewNormal));
-	vec3 v = normalize(-exSurface); // View direction
+	vec3 r = reflect(-lightIncident, normalize(viewNormal));
+	vec3 v = normalize(-viewSurface); // View direction
 	specular = dot(r, v);
 	if (specular > 0.0)
 		specular = 1.0 * pow(specular, 150.0);
 	specular = max(specular, 0.0);
-	//specular = min(specular, 1.0);
-	shade = 0.7*diffuse + 1.0*specular;
-	// outColor = vec4(shade, shade, shade, 1.0) + vec4(ambient, 0.0);
-	outColor = vec4(ka, 1.0);
+	specular = min(specular, 1.0);
+	vec3 shade = kd*diffuse + ks*specular + ka / 5.0 + ke;
+	outColor = vec4(shade, 1.0);
 }
